@@ -1,0 +1,35 @@
+.settings
+.project
+.classpath
+.metadata
+.recommenders
+
+# versions file checked out by vars/verifyTemplateVersion.groovy
+versions.txt
+
+# Intellij
+.idea/
+*.iml
+*.iws
+
+# Mac
+.DS_Store
+
+# Maven
+log/
+target/
+
+*.log
+[rR]esult/
+dependency-reduced-pom.xml
+# vim
+*~
+
+# binary files should be generated locally
+*.avro
+
+# git merge temporary files
+*.orig
+
+# cygwin
+*.stackdump
