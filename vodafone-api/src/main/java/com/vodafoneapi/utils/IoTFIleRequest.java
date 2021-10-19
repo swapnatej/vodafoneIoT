@@ -1,6 +1,5 @@
 package com.vodafoneapi.utils;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 

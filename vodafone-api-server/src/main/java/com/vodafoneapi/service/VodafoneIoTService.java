@@ -1,7 +1,7 @@
 package com.vodafoneapi.service;
 
-import com.vodafoneapi.utils.IoTFIleRequest;
 import com.vodafoneapi.dto.VodafoneIoTResponse;
+import com.vodafoneapi.utils.IoTFIleRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
