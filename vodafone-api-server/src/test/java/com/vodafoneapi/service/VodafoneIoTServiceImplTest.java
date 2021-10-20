@@ -50,7 +50,6 @@ public class VodafoneIoTServiceImplTest {
         assertEquals(NOT_FOUND, response.getStatusCode());
     }
 
-    @Disabled
     @Test
     @DisplayName("loadIoTEventsFromFileTest:  data refreshed")
     void loadIoTEventsFromFileTest2() throws IOException {
@@ -59,6 +58,7 @@ public class VodafoneIoTServiceImplTest {
         ResponseEntity response = service.loadIoTEventsFromFile(request);
         assertEquals(response.getBody(),DATA_REFRESHED);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(vodafoneIoTRepository, times(1)).saveAll(any());
     }
 
     @Test
