@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static com.vodafoneapi.utils.VodafoneIoTConstants.*;
 
@@ -29,12 +30,12 @@ import static com.vodafoneapi.utils.VodafoneIoTConstants.*;
 public class VodafoneIoTServiceImpl implements VodafoneIoTService{
     @Autowired
     private VodafoneIoTRepository vodafoneIoTRepository;
-    @Override
 
     /***
      * To batch loading the data provided in the csv file.
      * @param IoTFIleRequest
      */
+    @Override
     public ResponseEntity loadIoTEventsFromFile(IoTFIleRequest request)  {
         log.info("started loading event file...");
         String csvFilePath = request.getFilePath();
@@ -80,11 +81,14 @@ public class VodafoneIoTServiceImpl implements VodafoneIoTService{
         log.info("date time is {}",dateTime);
             List<VodafoneIoT> iotDataList = vodafoneIoTRepository.findByIdAndDateTimeList(productId,dateTime);
             if(ObjectUtils.isEmpty(iotDataList)){
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ERROR: Id "+ productId +" not found");
-            }else if(iotDataList.size() == 3) {
-                if (iotDataList.get(0).getLongitude().equals(iotDataList.get(1).getLongitude()) && iotDataList.get(1).getLongitude().equals(iotDataList.get(2).getLongitude())
+                throw new NoSuchElementException("ERROR: Id "+ productId +" not found");
+            }
+            if(productId.contains(CYCLE_PLUS_TRACKER_CODE) ) {
+                if(iotDataList.size() < 3)
+                    return  mapVodafoneIoTResponse(iotDataList.get(0), STATUS_NA);
+                else if (iotDataList.get(0).getLongitude().equals(iotDataList.get(1).getLongitude()) && iotDataList.get(1).getLongitude().equals(iotDataList.get(2).getLongitude())
                         && iotDataList.get(0).getLatitude().equals(iotDataList.get(1).getLatitude()) && iotDataList.get(1).getLatitude().equals(iotDataList.get(2).getLatitude())) {
-                    return mapVodafoneIoTResponse(iotDataList.get(0),STATUS_NA);
+                    return mapVodafoneIoTResponse(iotDataList.get(0),STATUS_INACTIVE);
                 }
             }
             return mapVodafoneIoTResponse(iotDataList.get(0),null);
@@ -97,7 +101,7 @@ public class VodafoneIoTServiceImpl implements VodafoneIoTService{
      * @return ResponseEntity<VodafoneIoTResponse>
      */
     public ResponseEntity<VodafoneIoTResponse> mapVodafoneIoTResponse(VodafoneIoT iotData, String status ){
-        if(iotData.getAirplaneMode() && iotData.getLongitude() == null && iotData.getLatitude() == null) {
+        if(!iotData.getAirplaneMode() && iotData.getLongitude() == null && iotData.getLatitude() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, DEVICE_COULD_NOT_BE_LOCATED_EXCEPTION);
         }
         VodafoneIoTResponse response = new VodafoneIoTResponse();
@@ -107,7 +111,7 @@ public class VodafoneIoTServiceImpl implements VodafoneIoTService{
         response.setLatitude(iotData.getLatitude() == null ? null : iotData.getLatitude());
         response.setBattery(getBatteryStatus(iotData.getBattery()));
         response.setName(iotData.getProductId().contains(CYCLE_PLUS_TRACKER_CODE)? CYCLE_PLUS_TRACKER : GENERAL_TRACKER);
-        response.setStatus(status != null ? status: iotData.getLatitude() != null && iotData.getLongitude() != null ? STATUS_ACTIVE : STATUS_INACTIVE);
+        response.setStatus(status != null ? status : iotData.getLatitude() != null && iotData.getLongitude() != null ? STATUS_ACTIVE : STATUS_INACTIVE);
         response.setDescription(!iotData.getAirplaneMode() ? LOCATION_IDENTIFIED : LOCATION_NOT_AVAILABLE);
         return new ResponseEntity<VodafoneIoTResponse>(response,HttpStatus.OK);
     }

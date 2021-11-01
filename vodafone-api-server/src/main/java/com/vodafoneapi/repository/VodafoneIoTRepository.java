@@ -11,12 +11,6 @@ import java.util.List;
 
 @Repository
 public interface VodafoneIoTRepository extends JpaRepository<VodafoneIoT,Long> {
-    @Query("FROM VodafoneIoT iot " +
-            "where iot.ProductId = :productId " +
-            "and (iot.DateTime = :dateTime " +
-            "OR  iot.DateTime = (SELECT MAX(E.DateTime) FROM VodafoneIoT E WHERE E.DateTime <=: dateTime)) ")
-    VodafoneIoT findByIdAndDateTime(@Param("productId") String productId,
-                                    @Param("dateTime") LocalDateTime dateTime);
 
     @Query(value = "SELECT * FROM VODAFONE_IOT   " +
             "            WHERE PRODUCT_ID = :productId " +

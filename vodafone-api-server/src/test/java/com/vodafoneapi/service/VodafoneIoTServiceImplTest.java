@@ -4,27 +4,27 @@ import com.vodafoneapi.dto.VodafoneIoTResponse;
 import com.vodafoneapi.entity.VodafoneIoT;
 import com.vodafoneapi.repository.VodafoneIoTRepository;
 import com.vodafoneapi.utils.IoTFIleRequest;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static com.vodafoneapi.utils.VodafoneIoTConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -74,7 +74,7 @@ public class VodafoneIoTServiceImplTest {
         assertEquals(response.getBody().getDescription(),LOCATION_IDENTIFIED);
         assertEquals(response.getBody().getLatitude(),51.5185F);
         assertEquals(response.getBody().getLongitude(),-0.1736F);
-        assertEquals(response.getBody().getStatus(),STATUS_ACTIVE);
+        assertEquals(response.getBody().getStatus(),STATUS_NA);
         verify(vodafoneIoTRepository, times(1)).findByIdAndDateTimeList(any(),any());
     }
 
@@ -82,10 +82,10 @@ public class VodafoneIoTServiceImplTest {
     @DisplayName("getIotUserDetailTestError: Id Not Found")
     void getIotUserDetailTest2(){
         when(vodafoneIoTRepository.findByIdAndDateTimeList(any(),any())).thenReturn(List.of());
-        Exception exception = Assertions.assertThrows(ResponseStatusException.class, () -> {
+        NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, () -> {
             service.getIotUserDetail("WG11155638",null);
         });
-        assertTrue(exception.getMessage().contains(NOT_FOUND.toString()));
+        assertTrue(exception.getMessage().contains("ERROR: Id WG11155638 not found"));
         verify(vodafoneIoTRepository, times(1)).findByIdAndDateTimeList(any(),any());
     }
 
@@ -102,7 +102,7 @@ public class VodafoneIoTServiceImplTest {
         assertEquals(response.getBody().getDescription(),LOCATION_IDENTIFIED);
         assertEquals(response.getBody().getLatitude(),51.5185F);
         assertEquals(response.getBody().getLongitude(),-0.1736F);
-        assertEquals(response.getBody().getStatus(),STATUS_NA);
+        assertEquals(response.getBody().getStatus(),STATUS_INACTIVE);
         verify(vodafoneIoTRepository, times(1)).findByIdAndDateTimeList(any(),any());
     }
 
@@ -129,15 +129,20 @@ public class VodafoneIoTServiceImplTest {
     }
 
     @Test
-    @DisplayName("mapVodafoneIoTResponseTest: ResponseStatusException")
+    @DisplayName("mapVodafoneIoTResponseTest: ResponseStatusException when AirPlane mode is off but location not present")
     void mapVodafoneIoTResponseTest(){
         VodafoneIoT iotData = getVodafoneIoTData();
-        iotData.setAirplaneMode(Boolean.TRUE);
-        Exception exception = Assertions.assertThrows(ResponseStatusException.class, () -> {
+        iotData.setAirplaneMode(Boolean.FALSE);
+        ResponseStatusException exception = Assertions.assertThrows(ResponseStatusException.class, () -> {
             service.mapVodafoneIoTResponse(iotData,null);
         });
         assertTrue(exception.getMessage().contains(DEVICE_COULD_NOT_BE_LOCATED_EXCEPTION));
 
+    }
+    @Test
+    @DisplayName("mapVodafoneIoTResponseTest: Success when AirPlane mode is off and location is present")
+    void mapVodafoneIoTResponseTest4(){
+        VodafoneIoT iotData = getVodafoneIoTData();
         iotData.setAirplaneMode(Boolean.FALSE);
         iotData.setLatitude(51.5185F);
         iotData.setLongitude(-0.1736F);
@@ -148,6 +153,7 @@ public class VodafoneIoTServiceImplTest {
         assertEquals(response.getBody().getLongitude(),-0.1736F);
         assertEquals(response.getBody().getStatus(),STATUS_ACTIVE);
     }
+
 
     @Test
     @DisplayName("mapVodafoneIoTResponseTest: without passing status value")
